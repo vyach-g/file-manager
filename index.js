@@ -1,1 +1,3 @@
-console.log('Hello from node!');
+import { FileManager } from './FileManager.js';
+
+const fileManager = new FileManager();
