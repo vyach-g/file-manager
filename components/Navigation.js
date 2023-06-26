@@ -1,6 +1,6 @@
 import path from 'path';
 import fs from 'fs';
-import { Message } from '../Message.js';
+import { Message } from './Message.js';
 
 class NavigationComponent {
   constructor(startPath) {
@@ -11,50 +11,64 @@ class NavigationComponent {
     return path.resolve(this.path, filename || '');
   }
 
+  replaceName(filePath, name) {
+    const directory = path.dirname(filePath);
+    return path.resolve(directory, name || '');
+  }
+
+  addFilename(filePath, directory = '.') {
+    const name = path.basename(filePath);
+    return path.resolve(this.path, directory, name);
+  }
+
+  addZipExt(filePath, directory = '.') {
+    const name = path.basename(filePath) + '.br';
+    return path.resolve(this.path, directory, name);
+  }
+
+  removeZipExt(filePath, directory = '.') {
+    const name = path.basename(filePath).replace('.br', '');
+    return path.resolve(this.path, directory, name);
+  }
+
   up() {
     this.path = path.resolve(this.path, '..');
     Message.write(this.path);
   }
 
-  cd(arg) {
-    const newPath = path.resolve(this.path, arg || '');
-    fs.access(newPath, fs.constants.F_OK, (err) => {
-      if (err) {
-        Message.operationFailed();
-        Message.write(this.path);
-        return;
-      }
+  async cd(arg) {
+    try {
+      const newPath = path.resolve(this.path, arg || '');
+      await fs.promises.access(newPath, fs.constants.F_OK);
       this.path = newPath;
-      Message.write(this.path);
-    });
+    } catch (err) {
+      Message.operationFailed();
+    }
   }
 
-  ls() {
-    fs.readdir(this.path, (err, items) => {
-      if (err) {
-        Message.operationFailed();
-        return;
-      }
+  async ls() {
+    try {
+      const items = await fs.promises.readdir(this.path, {
+        withFileTypes: true,
+      });
       const folders = [];
       const files = [];
 
       items.forEach((item) => {
-        const itemPath = path.resolve(this.path, item);
-        try {
-          const stats = fs.statSync(itemPath);
-          if (stats.isDirectory()) {
-            folders.push(item);
-          } else {
-            files.push(item);
-          }
-        } catch {}
+        if (item.isDirectory()) {
+          folders.push(item.name);
+        } else {
+          files.push(item.name);
+        }
       });
 
       folders.sort((a, b) => a.localeCompare(b));
       files.sort((a, b) => a.localeCompare(b));
 
       Message.drawItemList(folders, files);
-    });
+    } catch (err) {
+      Message.operationFailed();
+    }
   }
 }
 

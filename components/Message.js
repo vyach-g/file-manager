@@ -9,6 +9,7 @@ class Message {
 
   currentPath(path) {
     console.log(`You are currently in: ${path}`);
+    process.stdout.write(path + '> ');
   }
 
   invalidInput() {

@@ -1,5 +1,5 @@
 import os from 'os';
-import { Message } from '../Message.js';
+import { Message } from './Message.js';
 
 const OS_ARGS = {
   '--EOL': 'eol',
@@ -19,27 +19,27 @@ class OsComponent {
   }
 
   eol() {
-    console.log(os.EOL);
+    Message.write(os.EOL);
   }
 
   cpus() {
     const cpuInfo = os.cpus();
-    console.log('CPUs total count: ' + cpuInfo.length);
+    Message.write('CPUs total count: ' + cpuInfo.length);
     cpuInfo.forEach((cpu) => {
-      console.log('Model: ' + cpu.model + ' | ' + 'Speed: ' + cpu.speed / 1000 + 'GHz');
+      Message.write('Model: ' + cpu.model + ' | ' + 'Speed: ' + cpu.speed / 1000 + 'GHz');
     });
   }
 
   homedir() {
-    console.log(os.homedir());
+    Message.write(os.homedir());
   }
 
   username() {
-    console.log(os.userInfo().username);
+    Message.write(os.userInfo().username);
   }
 
   architecture() {
-    console.log(process.arch);
+    Message.write(process.arch);
   }
 }
 

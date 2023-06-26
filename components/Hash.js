@@ -1,20 +1,14 @@
 import fs from 'fs';
 import crypto from 'crypto';
-import { Message } from '../Message.js';
+import { Message } from './Message.js';
 
 class HashComponent {
-  hash(path) {
-    console.log(path);
+  async hash(path) {
     try {
-      fs.readFile(path, (err, data) => {
-        if (err) {
-          Message.operationFailed();
-          return;
-        }
-        const string = data.toString();
-        const hash = crypto.createHash('sha256').update(string).digest('hex');
-        console.log(hash);
-      });
+      const content = await fs.promises.readFile(path);
+      const string = content.toString();
+      const hash = crypto.createHash('sha256').update(string).digest('hex');
+      Message.write('File: ' + path + '\nHash: ' + hash);
     } catch (err) {
       Message.operationFailed();
     }

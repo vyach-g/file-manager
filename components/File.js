@@ -1,88 +1,107 @@
 import fs from 'fs';
-import { Message } from '../Message.js';
+import { Message } from './Message.js';
 
 class FileComponent {
-  cat(path) {
-    fs.readFile(path, { encoding: 'utf-8' }, (err, data) => {
-      if (err) {
-        Message.operationFailed();
-        return;
-      }
-      console.log(data);
-    });
+  async cat(path) {
+    try {
+      const content = await fs.promises.readFile(path, { encoding: 'utf-8' });
+      Message.write(content);
+    } catch (err) {
+      Message.operationFailed();
+    }
   }
 
-  add(path) {
-    fs.writeFile(path, '', (err) => {
-      if (err) {
-        Message.operationFailed();
-        return;
-      }
-      console.log('File created: ' + path);
-    });
+  async add(path) {
+    try {
+      await fs.promises.writeFile(path, '');
+      Message.write('File created: ' + path);
+    } catch (err) {
+      Message.operationFailed();
+    }
   }
 
-  rn(src, dest) {
-    fs.rename(src, dest, (err) => {
-      if (err) {
-        Message.operationFailed();
-        return;
-      }
-      console.log('File successfully renamed: ' + dest);
-    });
+  async rn(src, dest) {
+    try {
+      await fs.promises.rename(src, dest);
+      Message.write('File successfully renamed: ' + dest);
+    } catch (err) {
+      Message.operationFailed();
+    }
   }
 
   cp(src, dest) {
-    const readableStream = fs.createReadStream(src);
-    const writableStream = fs.createWriteStream(dest);
+    return new Promise((res, rej) => {
+      let isFailed = false;
+      const readableStream = fs.createReadStream(src);
+      const writableStream = fs.createWriteStream(dest);
 
-    readableStream.pipe(writableStream);
-    writableStream.on('finish', () => {
-      console.log('File ' + src + ' copied successfully to ' + dest);
-    });
+      readableStream
+        .on('error', (error) => {
+          if (!isFailed) {
+            isFailed = true;
+            Message.operationFailed();
+            res();
+          }
+        })
+        .pipe(writableStream)
+        .on('error', (error) => {
+          if (!isFailed) {
+            isFailed = true;
+            Message.operationFailed();
+            res();
+          }
+        });
 
-    readableStream.on('error', (error) => {
-      Message.operationFailed();
-    });
-
-    writableStream.on('error', (error) => {
-      Message.operationFailed();
+      writableStream.on('finish', () => {
+        Message.write('File ' + src + ' copied successfully to ' + dest);
+        res();
+      });
     });
   }
 
   mv(src, dest) {
-    const readableStream = fs.createReadStream(src);
-    const writableStream = fs.createWriteStream(dest);
+    return new Promise((res, rej) => {
+      let isFailed = false;
+      const readableStream = fs.createReadStream(src);
+      const writableStream = fs.createWriteStream(dest);
 
-    readableStream.pipe(writableStream);
-    writableStream.on('finish', () => {
-      fs.unlink(src, (err) => {
-        if (err) {
-          Message.operationFailed();
-          return;
-        }
+      readableStream
+        .on('error', (error) => {
+          if (!isFailed) {
+            isFailed = true;
+            Message.operationFailed();
+            res();
+          }
+        })
+        .pipe(writableStream)
+        .on('error', (error) => {
+          if (!isFailed) {
+            isFailed = true;
+            Message.operationFailed();
+            res();
+          }
+        });
+
+      writableStream.on('finish', () => {
+        fs.unlink(src, (err) => {
+          if (err) {
+            Message.operationFailed();
+            return;
+          }
+          Message.write('File ' + src + ' moved successfully to ' + dest);
+          res();
+        });
       });
-
-      console.log('File ' + src + ' moved successfully to ' + dest);
-    });
-
-    readableStream.on('error', (error) => {
-      Message.operationFailed();
-    });
-
-    writableStream.on('error', (error) => {
-      Message.operationFailed();
     });
   }
 
-  rm(path) {
-    fs.unlink(path, (err) => {
-      if (err) {
-        Message.operationFailed();
-        return;
-      }
-      console.log('File deleted: ' + path);
-    });
+  async rm(path) {
+    try {
+      await fs.promises.unlink(path);
+      Message.write('File deleted: ' + path);
+    } catch (err) {
+      Message.operationFailed();
+    }
   }
 }
 

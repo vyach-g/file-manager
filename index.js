@@ -1,3 +1,3 @@
-import { FileManager } from './FileManager.js';
+import { FileManager } from './components/FileManager.js';
 
 const fileManager = new FileManager();
